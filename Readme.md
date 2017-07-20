@@ -18,6 +18,8 @@ Example:
 
 > node main -in ~/tmp/in/ -out ~/tmp/out/
 
+Only the files with extension `.pdf` present in the input directory will be processed, the other files will be ignored. 
+
 ## Requirements
 
 - mustache

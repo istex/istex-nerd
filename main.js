@@ -69,7 +69,14 @@ const NERD_QUERY_SPECIES = {
 function processNerd(options, cb) {
   	// get the PDF paths
 	fs.readdir(options.inPath, function(err, files) {
-	  	files.forEach(file => {
+	  	files
+	  	.filter(function (file) {
+        	return fs.statSync(options.inPath + "/" + file).isFile();
+		})
+		.filter(function (file) {
+        	return file.endsWith(".pdf");
+		})
+	  	.forEach(file => {
 	  		//options.pdfs.push(options.inPath+"/"+file);
 	  		console.log(options.inPath+"/"+file);
 
@@ -81,7 +88,7 @@ function processNerd(options, cb) {
   				console.log(res.statusCode);
   				res.setEncoding('utf8');
 
-  				// write JSON reponse
+  				// write JSON reponse 
   				res.on('data', function (chunk) {
   					//console.log(chunk);
   					mkdirp(options.outPath, function(err, made) {
@@ -101,64 +108,61 @@ function processNerd(options, cb) {
   				});
   				
   				// write TEI based on the JSON
-  				{
-	  				var jsonFilePath = file.replace(".pdf", ".tei");
-	  				var localOptionsTei = new Object();
-	  				localOptionsTei.outPath = options.outPath;
-	  				localOptionsTei.output = jsonFilePath;
-	  				// complete the options object with information to creating the TEI
-					localOptionsTei.template = "resources/nerd.template.tei.xml";
-	  				res.on('data', function (chunk) {
-	  					//console.log(chunk);
-	  					var jsonChunk = JSON.parse(chunk);
-	  					var data = new Object();
-	  					data.date = new Date().toISOString();
-	  					data.entities = [];
-	  					buildEntityDistribution(data.entities, jsonChunk);
-	  					// render each entity as a TEI <term> element 
-	  					data.line = function () {
-	  						return "<term key=\"" + this.wikidataId + 
-	  							"\" cert=\"" + this.confidence + "\">" + 
-	  							this.terms[0] + "</term>";
-  						}
-	  					writeFormattedStuff(data, localOptionsTei, function(err) { 
-							if (err) { 
-								console.log(err);
-							} 
-							console.log("TEI standoff fragment written under: " + 
-								localOptionsTei.outPath + "/" + localOptionsTei.output); 
-						});
-	  				});
-	  			}
+  				var jsonFilePath = file.replace(".pdf", ".tei");
+  				var localOptionsTei = new Object();
+  				localOptionsTei.outPath = options.outPath;
+  				localOptionsTei.output = jsonFilePath;
+  				// complete the options object with information to creating the TEI
+				localOptionsTei.template = "resources/nerd.template.tei.xml";
+  				res.on('data', function (chunk) {
+  					//console.log(chunk);
+  					var jsonChunk = JSON.parse(chunk);
+  					var data = new Object();
+  					data.date = new Date().toISOString();
+  					data.entities = [];
+  					buildEntityDistribution(data.entities, jsonChunk);
+  					// render each entity as a TEI <term> element 
+  					data.line = function () {
+  						return "<term key=\"" + this.wikidataId + 
+  							"\" cert=\"" + this.confidence + "\">" + 
+  							this.terms[0] + "</term>";
+						}
+  					writeFormattedStuff(data, localOptionsTei, function(err) { 
+						if (err) { 
+							console.log(err);
+						} 
+						console.log("TEI standoff fragment written under: " + 
+							localOptionsTei.outPath + "/" + localOptionsTei.output); 
+					});
+  				});
+	  			
 
   				// write CSV based on the JSON
-  				{
-	  				var csvFilePath = file.replace(".pdf", ".csv");
-	  				var localOptionsCsv = new Object();
-	  				localOptionsCsv.outPath = options.outPath;
-	  				localOptionsCsv.output = csvFilePath;
-	  				// complete the options object with information to creating the CSV
-					localOptionsCsv.template = "resources/nerd.template.csv";
-	  				res.on('data', function (chunk) {
-	  					//console.log(chunk);
-	  					var jsonChunk = JSON.parse(chunk);
-	  					var data = new Object();
-	  					data.date = new Date().toISOString();
-	  					data.entities = [];
-	  					buildEntityDistribution(data.entities, jsonChunk);
-	  					// render each entity as csv
-	  					data.line = function () {
-    						return this.wikidataId + "\t" + this.confidence + "\t"+ this.terms.join(", ");
-  						}
-	  					writeFormattedStuff(data, localOptionsCsv, function(err) { 
-							if (err) { 
-								console.log(err);
-							} 
-							console.log("CSV file written under: " + 
-								localOptionsCsv.outPath + "/" + localOptionsCsv.output); 
-						});
-	  				});
-	  			}
+  				var csvFilePath = file.replace(".pdf", ".csv");
+  				var localOptionsCsv = new Object();
+  				localOptionsCsv.outPath = options.outPath;
+  				localOptionsCsv.output = csvFilePath;
+  				// complete the options object with information to creating the CSV
+				localOptionsCsv.template = "resources/nerd.template.csv";
+  				res.on('data', function (chunk) {
+  					//console.log(chunk);
+  					var jsonChunk = JSON.parse(chunk);
+  					var data = new Object();
+  					data.date = new Date().toISOString();
+  					data.entities = [];
+  					buildEntityDistribution(data.entities, jsonChunk);
+  					// render each entity as csv
+  					data.line = function () {
+						return this.wikidataId + "\t" + this.confidence + "\t"+ this.terms.join(", ");
+						}
+  					writeFormattedStuff(data, localOptionsCsv, function(err) { 
+						if (err) { 
+							console.log(err);
+						} 
+						console.log("CSV file written under: " + 
+							localOptionsCsv.outPath + "/" + localOptionsCsv.output); 
+					});
+  				});
 			});
 	  	});
 	});
