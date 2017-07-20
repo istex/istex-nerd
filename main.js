@@ -81,7 +81,10 @@ function processNerd(options, cb) {
 	  		console.log(options.inPath+"/"+file);
 
 	  		var form = new FormData();
-			form.append("query", JSON.stringify(NERD_QUERY_SPECIES));
+	  		if (options.profile && (options.profile == "species"))
+				form.append("query", JSON.stringify(NERD_QUERY_SPECIES));
+			else
+				form.append("query", JSON.stringify(NERD_QUERY));
 			form.append("file", fs.createReadStream(options.inPath+"/"+file));
 
 			form.submit(NERD_URL, function(err, res, body) {
@@ -89,15 +92,19 @@ function processNerd(options, cb) {
   				res.setEncoding('utf8');
 
   				// write JSON reponse 
-  				res.on('data', function (chunk) {
-  					//console.log(chunk);
+  				var body = "";
+			  	res.on("data", function (chunk) {
+    				body += chunk;
+  				});
+  				res.on("end", function () {
+  					//console.log(body);
   					mkdirp(options.outPath, function(err, made) {
 					    // I/O error
 					    if (err) 
 					      	return cb(err);
 
 	  					var jsonFilePath = options.outPath+"/"+file.replace(".pdf", ".json");
-	  					fs.writeFile(jsonFilePath, chunk, 'utf8', 
+	  					fs.writeFile(jsonFilePath, body, 'utf8', 
 	  						function(err) { 
 	  							if (err) { 
 	  								console.log(err);
@@ -114,13 +121,12 @@ function processNerd(options, cb) {
   				localOptionsTei.output = jsonFilePath;
   				// complete the options object with information to creating the TEI
 				localOptionsTei.template = "resources/nerd.template.tei.xml";
-  				res.on('data', function (chunk) {
-  					//console.log(chunk);
-  					var jsonChunk = JSON.parse(chunk);
+  				res.on("end", function () {
+  					var jsonBody = JSON.parse(body);
   					var data = new Object();
   					data.date = new Date().toISOString();
   					data.entities = [];
-  					buildEntityDistribution(data.entities, jsonChunk);
+  					buildEntityDistribution(data.entities, jsonBody);
   					// render each entity as a TEI <term> element 
   					data.line = function () {
   						return "<term key=\"" + this.wikidataId + 
@@ -144,13 +150,12 @@ function processNerd(options, cb) {
   				localOptionsCsv.output = csvFilePath;
   				// complete the options object with information to creating the CSV
 				localOptionsCsv.template = "resources/nerd.template.csv";
-  				res.on('data', function (chunk) {
-  					//console.log(chunk);
-  					var jsonChunk = JSON.parse(chunk);
+  				res.on("end", function () {
+  					var jsonBody = JSON.parse(body);
   					var data = new Object();
   					data.date = new Date().toISOString();
   					data.entities = [];
-  					buildEntityDistribution(data.entities, jsonChunk);
+  					buildEntityDistribution(data.entities, jsonBody);
   					// render each entity as csv
   					data.line = function () {
 						return this.wikidataId + "\t" + this.confidence + "\t"+ this.terms.join(", ");
@@ -219,6 +224,8 @@ function init(cb) {
 			options.inPath = process.argv[i];
 		} else if (process.argv[i-1] == "-out") {
 			options.outPath = process.argv[i];
+		} else if (process.argv[i-1] == "-p") {
+			options.profile = process.argv[i];
 		}
 	}
 
@@ -250,6 +257,8 @@ function buildEntityDistribution(entities, json) {
 	var mapEntities = new Map();
 	for(var i=0; i<nerdEntitites.length; i++) {
 		var item = nerdEntitites[i];
+		if (!item.wikidataId)
+			continue;
 		var theEntity = {};
 		theEntity.wikidataId = item.wikidataId;
 		theEntity.confidence = item.nerd_score;
