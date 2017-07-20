@@ -213,8 +213,6 @@ function init(cb) {
 	for (var i = 1, len = process.argv.length; i < len; i++) {
 		if (process.argv[i-1] == "-in") {
 			options.inPath = process.argv[i];
-		} else if (process.argv[i-1] == "-nbThreads") {
-			options.nbThreads = process.argv[i];
 		} else if (process.argv[i-1] == "-out") {
 			options.outPath = process.argv[i];
 		}
