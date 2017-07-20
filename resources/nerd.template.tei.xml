@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<standOff>
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <title>(N)ERD annotations</title>
+                <respStmt/>
+            </titleStmt>
+            <publicationStmt>
+                <availability status="unknown"></availability>
+            </publicationStmt>
+            <sourceDesc/>
+            <encodingDesc>
+                <appInfo>
+                    <application ident="nerd" version="0.0.2" when="{{date}}">
+                        <label>(N)ERD</label>
+                    </application>
+                </appInfo>
+                <classDecl>
+                    <taxonomy xml:id="wikidata">
+                        <gloss>Wikidata is a free and open knowledge base that can be read and edited by both humans and machines <ref target="https://www.wikidata.org"/>
+                        </gloss>
+                    </taxonomy>
+                    <taxonomy xml:id="wikipedia">
+                        <gloss>The Free Encyclopedia 
+                            <ref target="https://www.wikipedia.org"/>
+                        </gloss>
+                    </taxonomy>
+                </classDecl>
+            </encodingDesc>
+        </fileDesc>
+        <profileDesc/>
+        <revisionDesc/>
+    </teiHeader>
+
+    <listAnnotation type="concept">
+        <annotationBlock
+            xmlns="https//www.tei-c.org/ns/1.0" inst="#text">
+            <keywords scheme="#wikidata">
+                {{#entities}}
+                {{{line}}}
+                {{/entities}}
+            </keywords>
+        </annotationBlock>
+    </listAnnotation>
+
+</standOff>
+

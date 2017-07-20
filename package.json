@@ -1,0 +1,25 @@
+{
+  "name": "istex-nerd",
+  "version": "0.1.0",
+  "description": "Interface for the (N)ERD service to ISTEX resources and results encoded in standoff TEI",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "istex-rd",
+  "license": "Apache-2.0",
+  "keywords": [
+    "istex",
+    "nerd"
+  ],
+  "dependencies": {
+    "async": "^2.1.4",
+    "cheerio": "^0.22.0",
+    "dateformat": "^1.0.12",
+    "mkdirp": "^0.5.1",
+    "mocha": "^3.2.0",
+    "mustache": "^2.2.1",
+    "request": "^2.74.0",
+    "form-data": "2.2.0"
+  }
+}

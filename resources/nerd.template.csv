@@ -1,0 +1,4 @@
+wikidata id	confidence	raw term
+{{#entities}}
+{{line}}
+{{/entities}}
