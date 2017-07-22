@@ -1,17 +1,12 @@
 'use strict';
 
 /* Module Require */
-var //dateFormat = require('dateformat'),
-  //cheerio = require('cheerio'),
-  mkdirp = require('mkdirp'),
+var mkdirp = require('mkdirp'),
   mustache = require('mustache'),
   request = require('request'),
   FormData = require('form-data'),
   async = require('async'),
   fs = require('fs');
-  //path = require('path'),
-  //extend = require('util')._extend,
-  //child_process = require('child_process');
 
 // the URL of the (N)ERD service (to be changed if necessary)
 const NERD_URL = "http://localhost:8090/service";
@@ -50,6 +45,7 @@ const NERD_QUERY_SPECIES = {
     ],
     "nbest": false,
     "customisation": "generic",
+    "full": true,
     "filter": { "property": { "id": "P225"} }
 };
 
@@ -71,26 +67,23 @@ function processNerd(options, cb) {
         	return file.endsWith(".pdf");
 		})
 	  	.forEach(file => {
-	  		//options.pdfs.push(options.inPath+"/"+file);
-	  		console.log("Processing: " + options.inPath+"/"+file);
-
 	  		var form = new FormData();
 	  		if (options.profile && (options.profile == "species"))
 				form.append("query", JSON.stringify(NERD_QUERY_SPECIES));
 			else
 				form.append("query", JSON.stringify(NERD_QUERY));
 			form.append("file", fs.createReadStream(options.inPath+"/"+file));
-
+			//console.log("Processing: " + options.inPath+"/"+file);
 			form.submit(NERD_URL+"/disambiguate", function(err, res, body) {
+				console.log("Processing: " + options.inPath+"/"+file);
+				res.setEncoding('utf8');
   				console.log(res.statusCode);
-  				res.setEncoding('utf8');
 
   				// write JSON reponse 
   				var body = "";
 			  	res.on("data", function (chunk) {
-    				body += chunk;
+    				body += chunk				;
   				});
-
   				res.on("end", function () {
   					//console.log(body);
   					mkdirp(options.outPath, function(err, made) {
@@ -109,68 +102,61 @@ function processNerd(options, cb) {
 		  			
 	  					var jsonBody = JSON.parse(body);
 
-	  					var entityRegistry = new Map();
+				        // create and write the TEI fragment
+		  				var teiFilePath = file.replace(".pdf", ".tei");
+		  				var localOptionsTei = new Object();
+		  				localOptionsTei.outPath = options.outPath;
+		  				localOptionsTei.output = teiFilePath;
+		  				// complete the options object with information to creating the TEI
+						localOptionsTei.template = "resources/nerd.template.tei.xml";
 
-	  					async.waterfall([
-						    function(callback) {
-						        fillEntityInfo(jsonBody, entityRegistry, function(err) { 
-		  							if (err) { 
-		  								console.log(err);
-		  							} 
-		  						});
-						        callback(null, entityRegistry);
-						    },
-						    function(entityRegistry, callback) {
-						        // create and write the TEI fragment
-				  				var teiFilePath = file.replace(".pdf", ".tei");
-				  				var localOptionsTei = new Object();
-				  				localOptionsTei.outPath = options.outPath;
-				  				localOptionsTei.output = teiFilePath;
-				  				// complete the options object with information to creating the TEI
-								localOptionsTei.template = "resources/nerd.template.tei.xml";
-
-			  					var dataTei = new Object();
-			  					dataTei.date = new Date().toISOString();
-			  					dataTei.entities = [];
-			  					buildEntityDistribution(dataTei.entities, jsonBody);
-			  					// render each entity as a TEI <term> element 
-			  					dataTei.line = function () {
-			  						return "<term key=\"" + this.wikidataId + 
-			  							"\" cert=\"" + this.confidence + "\">" + 
-			  							this.terms[0] + "</term>";
-									}
-			  					writeFormattedStuff(dataTei, localOptionsTei, function(err) { 
-									if (err) { 
-										console.log(err);
-									} 
-									console.log("TEI standoff fragment written under: " + 
-										localOptionsTei.outPath + "/" + localOptionsTei.output); 
-								});
-				  				
-			  					// create and write the CSV file
-				  				var csvFilePath = file.replace(".pdf", ".csv");
-				  				var localOptionsCsv = new Object();
-				  				localOptionsCsv.outPath = options.outPath;
-				  				localOptionsCsv.output = csvFilePath;
-				  				// complete the options object with information to creating the CSV
-								localOptionsCsv.template = "resources/nerd.template.csv";
-								var dataCsv = new Object();
-				  				dataCsv.entities = [];
-			  					buildEntityDistribution(dataCsv.entities, jsonBody);
-			  					// render each entity as csv
-			  					dataCsv.line = function () {
-									return this.wikidataId + "\t" + this.confidence + "\t"+ this.terms.join(", ");
-								}
-			  					writeFormattedStuff(dataCsv, localOptionsCsv, function(err) { 
-									if (err) { 
-										console.log(err);
-									} 
-									console.log("CSV file written under: " + 
-										localOptionsCsv.outPath + "/" + localOptionsCsv.output); 
-								});
-						    },
-						], function (err,result) {
-						    console.log(result)
+	  					var dataTei = new Object();
+	  					dataTei.date = new Date().toISOString();
+	  					dataTei.entities = [];
+	  					buildEntityDistribution(dataTei.entities, options.profile, jsonBody);
+	  					// render each entity as a TEI <term> element 
+	  					dataTei.line = function () {
+	  						return "<term key=\"" + this.wikidataId + 
+	  							"\" cert=\"" + this.confidence + "\">" + 
+	  							this.terms[0] + "</term>";
+							}
+	  					writeFormattedStuff(dataTei, localOptionsTei, function(err) { 
+							if (err) { 
+								console.log(err);
+							} 
+							console.log("TEI standoff fragment written under: " + 
+								localOptionsTei.outPath + "/" + localOptionsTei.output); 
+						});
+		  				
+	  					// create and write the CSV file
+		  				var csvFilePath = file.replace(".pdf", ".csv");
+		  				var localOptionsCsv = new Object();
+		  				localOptionsCsv.outPath = options.outPath;
+		  				localOptionsCsv.output = csvFilePath;
+		  				// complete the options object with information to creating the CSV
+						localOptionsCsv.template = "resources/nerd.template.csv";
+						var dataCsv = new Object();
+		  				dataCsv.entities = [];
+	  					buildEntityDistribution(dataCsv.entities, options.profile, jsonBody);
+	  					// render each entity as csv
+	  					dataCsv.line = function () {
+	  						//wikidata id	confidence	rank	species	prefered term	observed raw terms
+							var theLine = this.wikidataId + "\t" + this.confidence + "\t";
+							if (this.P105)
+								theLine += this.P105 + "\t";
+							if (this.P225)
+								theLine += this.P225 + "\t";
+							if (this.preferedTerm)
+								theLine += this.preferedTerm + "\t";
+							theLine += this.terms.join(", ");
+							return theLine;	
+						}
+	  					writeFormattedStuff(dataCsv, localOptionsCsv, function(err) { 
+							if (err) { 
+								console.log(err);
+							} 
+							console.log("CSV file written under: " + 
+								localOptionsCsv.outPath + "/" + localOptionsCsv.output); 
 						});
 	  				});
   				});
@@ -264,11 +250,12 @@ function init(cb) {
  * entity is kept with its maximum confidence and the different raw term
  * used in the processed text to refer to the same entity
  * @param {object} entities the array of entities to be filled
+ * @param {object} profile name of the profile to consider or null
  * @param {object} json the response body of the (N)ERD disambiguation query
  *
  * @return {undefined} Return undefined
  */
-function buildEntityDistribution(entities, json) {
+function buildEntityDistribution(entities, profile, json) {
 	var nerdEntitites = json.entities;
 	var mapEntities = new Map();
 	for(var i=0; i<nerdEntitites.length; i++) {
@@ -281,6 +268,46 @@ function buildEntityDistribution(entities, json) {
 		theEntity.terms = [];
 		theEntity.terms.push(item.rawName);
 
+		if (item.preferedTerm)
+			theEntity.preferedTerm = item.preferedTerm;
+
+		var statements = item.statements;
+		if (statements) {
+			for(var j=0; j<statements.length; j++) {
+				var statement = statements[j];
+		
+				// taxon rank example -> { "conceptId" : "Q1310289", "propertyId" : "P105", 
+				// "propertyName" : "taxon rank", "valueType" : "wikibase-item", 
+				// "value" : "Q7432", "valueName" : "Species"}
+				if (statement.propertyId == "P105") {
+					if (statement.valueName) {
+						theEntity.P105 = statement.valueName.replace(" (biology)", "");
+//console.log(theEntity.wikidataId + " - P105: " + theEntity.P105);
+					}
+				}
+
+				// taxon name example -> { "conceptId" : "Q1310289", "propertyId" : "P225", 
+				// "propertyName" : "taxon name", "valueType" : "string", 
+				// "value" : "Phrynobatrachus africanus"},
+				if (statement.propertyId == "P225") {
+					if (statement.value) {
+						theEntity.P225 = statement.value;
+//console.log(theEntity.wikidataId + " - P225: " + theEntity.P225);
+					}
+				}
+			}
+		}
+
+		if (item.preferedTerm)
+			theEntity.preferedTerm = item.preferedTerm;
+
+		if (profile == "species") {
+			if (item.P105)
+				theEntity.P105 = item.P105;
+			if (item.P225)
+				theEntity.P225 = item.P225;
+		}
+
 		if (!mapEntities.has(theEntity.wikidataId)) {
 			mapEntities.set(theEntity.wikidataId, theEntity);
 		} else {
@@ -292,30 +319,13 @@ function buildEntityDistribution(entities, json) {
 		}
 	}
 
-	for (var entry of mapEntities.entries()) {
-	    var value = entry[1];
+	for (var value of mapEntities.values()) {
 	    entities.push(value);
 	}
 
 	entities.sort(function(a, b) {
     	return parseFloat(b.confidence) - parseFloat(a.confidence);
 	});
-}
-
-/**
- * Given the entities present in the given json, query the (N)ERD service 
- * for addition information about each entity
- * @param {object} jsonBody the response body of the (N)ERD disambiguation query
- * @param {object} entityRegistry where to put the additional information 
- * 					about each entities
- * @param {function} cb Callback called at the end of the process with the 
- * following available parameter:
- *  - {Error} err Read/write error
- * @return {undefined} Return undefined
- */
-function fillEntityInfo(jsonBody, entityRegistry, cb) { 
-	// TBD :)
-	return cb;
 }
 
 function main() {
