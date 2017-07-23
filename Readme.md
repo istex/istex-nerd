@@ -2,17 +2,17 @@
 
 This node.js module can be used to process a set of PDF in a given directory by the [(N)ERD](https://github.com/kermitt2/nerd) service. Results are written in a given output directory and include: 
 
-* the original JSON reponse from (N)ERD, 
+* the original JSON reponse from (N)ERD (extension `.json`), 
 
-* a TEI standoff fragment with the identified entities as TEI `<term>` elements,
+* a TEI standoff fragment with the identified entities as TEI `<term>` elements (extension `.tei`),
 
-* a CVS file with the identified entities, for the purpose of easier human-eye checking. 
+* a CVS file with the identified entities, for the purpose of easier human-eye checking (extension `.csv`). 
 
 ## Build and run
 
 You need first to install and start the (N)ERD service, see the [documentation](http://nerd.readthedocs.io). 
 
-Install the present module:
+When this is done, install the present module:
 
 > npm install
 
@@ -39,7 +39,9 @@ Currently the available query profiles are:
 ## Requirements
 
 - mustache
+- async
 - request
 - form-data
 - fs
 - mkdirp
+- path

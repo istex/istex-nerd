@@ -6,6 +6,7 @@ var mkdirp = require('mkdirp'),
   request = require('request'),
   FormData = require('form-data'),
   async = require('async'),
+  path = require('path'),
   fs = require('fs');
 
 // the URL of the (N)ERD service (to be changed if necessary)
@@ -20,7 +21,7 @@ const score = '\x1b[7m';
 const reset = '\x1b[0m';
 
 // naked nerd query
-const NERD_QUERY ={
+const NERD_QUERY = {
     "language": {
         "lang": "en"
     },
@@ -50,119 +51,164 @@ const NERD_QUERY_SPECIES = {
 };
 
 /**
+ * List all the PDF files in a directory in a synchronous fashion,
+ * @return the list of file names
+ */
+function getPDFFiles (dir) {
+    var fileList = [];
+    var files = fs.readdirSync(dir);
+    for (var i=0; i<files.length; i++) {
+    	if (fs.statSync(path.join(dir, files[i])).isFile()) {
+    		if (files[i].endsWith(".pdf") | files[i].endsWith(".PDF"))
+            	fileList.push(files[i]);
+        }
+    }
+    return fileList;
+}
+
+function sequentialRequests(options, listOfFiles, i) {
+  	if (i == undefined) {
+  		i = 0;
+  	}
+  	if (i >= listOfFiles.length) {
+  		return;
+  	}
+	var file = listOfFiles[i];	
+  	console.log("---\nProcessing: " + options.inPath+"/"+file);
+
+	var form = new FormData();
+	if (options.profile && (options.profile == "species"))
+		form.append("query", JSON.stringify(NERD_QUERY_SPECIES));
+	else
+		form.append("query", JSON.stringify(NERD_QUERY));
+	form.append("file", fs.createReadStream(options.inPath+"/"+file));
+	form.submit(NERD_URL+"/disambiguate", function(err, res, body) {
+		if (err) {
+			console.log(err);
+			return false;
+		}
+
+		if (!res) {
+			console.log("(N)ERd service appears unavailable");
+			return false;
+		}
+
+		res.setEncoding('utf8');
+
+		if (res.statusCode != 200) {
+			console.log("Call the (N)ERd service failed with error " + res.statusCode);
+			return false;
+		}
+
+		var body = "";
+	  	res.on("data", function (chunk) {
+			body += chunk;
+		});
+		
+		res.on("end", function () {
+			mkdirp(options.outPath, function(err, made) {
+			    // I/O error
+			    if (err) 
+			      	return cb(err);
+
+			    // first write JSON reponse 
+				var jsonFilePath = options.outPath+"/"+file.replace(".pdf", ".json");
+				fs.writeFile(jsonFilePath, body, 'utf8', 
+					function(err) { 
+						if (err) { 
+							console.log(err);
+						} 
+						console.log("JSON response written under: " + jsonFilePath); 
+					}
+				);
+			
+				var jsonBody;
+				try {
+					jsonBody = JSON.parse(body);
+				} catch(err) {
+				}
+
+				if (jsonBody) {
+			        // create and write the TEI fragment
+	  				var teiFilePath = file.replace(".pdf", ".tei");
+	  				var localOptionsTei = new Object();
+	  				localOptionsTei.outPath = options.outPath;
+	  				localOptionsTei.output = teiFilePath;
+	  				// complete the options object with information to creating the TEI
+					localOptionsTei.template = "resources/nerd.template.tei.xml";
+					var dataTei = new Object();
+					dataTei.date = new Date().toISOString();
+					dataTei.entities = [];
+					buildEntityDistribution(dataTei.entities, options.profile, jsonBody);
+					// render each entity as a TEI <term> element 
+					dataTei.line = function () {
+						return "<term key=\"" + this.wikidataId + 
+							"\" cert=\"" + this.confidence + "\">" + 
+							this.terms[0] + "</term>";
+					}
+					writeFormattedStuff(dataTei, localOptionsTei, function(err) { 
+						if (err) { 
+							console.log(err);
+						} 
+						console.log("TEI standoff fragment written under: " + options.outPath+"/"+localOptionsTei.output); 
+					});
+					
+					// create and write the CSV file
+	  				var csvFilePath = file.replace(".pdf", ".csv");
+	  				var localOptionsCsv = new Object();
+	  				localOptionsCsv.outPath = options.outPath;
+	  				localOptionsCsv.output = csvFilePath;
+	  				// complete the options object with information to creating the CSV
+					localOptionsCsv.template = "resources/nerd.template.csv";
+					var dataCsv = new Object();
+	  				dataCsv.entities = [];
+					buildEntityDistribution(dataCsv.entities, options.profile, jsonBody);
+					// render each entity as csv
+					dataCsv.line = function () {
+							//wikidata id	confidence	rank	species	prefered term	observed raw terms
+						var theLine = this.wikidataId + "\t" + this.confidence + "\t";
+						if (this.P105)
+							theLine += this.P105 + "\t";
+						if (this.P225)
+							theLine += this.P225 + "\t";
+						if (this.preferedTerm)
+							theLine += this.preferedTerm + "\t";
+						theLine += this.terms.join(", ");
+						return theLine;	
+					};
+					writeFormattedStuff(dataCsv, localOptionsCsv, function(err) { 
+						if (err) { 
+							console.log(err);
+						} 
+						console.log("CSV file written under: " + options.outPath+"/"+localOptionsCsv.output); 
+					});
+
+					// move to next file to be processed
+					i++;
+					sequentialRequests(options, listOfFiles, i);
+				} else {
+					// redo
+					console.log("(weird bug from formdata/node.js...)");
+					console.log("retry...");
+					sequentialRequests(options, listOfFiles, i);
+				}
+			});
+		});
+  	})
+}
+
+/**
  * Process a PDF file by calling the (N)ERD service and enrich with the resulting
  * JSON
  * @param {function} cb Callback called at the end of the process with the following available parameter:
  *  - {Error} err Read/write error
  * @return {undefined} Return undefined
  */
-function processNerd(options, cb) {
+function processNerd(options) {
   	// get the PDF paths
-	fs.readdir(options.inPath, function(err, files) {
-	  	files
-	  	.filter(function (file) {
-        	return fs.statSync(options.inPath + "/" + file).isFile();
-		})
-		.filter(function (file) {
-        	return file.endsWith(".pdf");
-		})
-	  	.forEach(file => {
-	  		var form = new FormData();
-	  		if (options.profile && (options.profile == "species"))
-				form.append("query", JSON.stringify(NERD_QUERY_SPECIES));
-			else
-				form.append("query", JSON.stringify(NERD_QUERY));
-			form.append("file", fs.createReadStream(options.inPath+"/"+file));
-			//console.log("Processing: " + options.inPath+"/"+file);
-			form.submit(NERD_URL+"/disambiguate", function(err, res, body) {
-				console.log("Processing: " + options.inPath+"/"+file);
-				res.setEncoding('utf8');
-  				console.log(res.statusCode);
-
-  				// write JSON reponse 
-  				var body = "";
-			  	res.on("data", function (chunk) {
-    				body += chunk				;
-  				});
-  				res.on("end", function () {
-  					//console.log(body);
-  					mkdirp(options.outPath, function(err, made) {
-					    // I/O error
-					    if (err) 
-					      	return cb(err);
-
-	  					var jsonFilePath = options.outPath+"/"+file.replace(".pdf", ".json");
-	  					fs.writeFile(jsonFilePath, body, 'utf8', 
-	  						function(err) { 
-	  							if (err) { 
-	  								console.log(err);
-	  							} 
-	  							console.log("JSON response written under: " + jsonFilePath); 
-	  						});
-		  			
-	  					var jsonBody = JSON.parse(body);
-
-				        // create and write the TEI fragment
-		  				var teiFilePath = file.replace(".pdf", ".tei");
-		  				var localOptionsTei = new Object();
-		  				localOptionsTei.outPath = options.outPath;
-		  				localOptionsTei.output = teiFilePath;
-		  				// complete the options object with information to creating the TEI
-						localOptionsTei.template = "resources/nerd.template.tei.xml";
-
-	  					var dataTei = new Object();
-	  					dataTei.date = new Date().toISOString();
-	  					dataTei.entities = [];
-	  					buildEntityDistribution(dataTei.entities, options.profile, jsonBody);
-	  					// render each entity as a TEI <term> element 
-	  					dataTei.line = function () {
-	  						return "<term key=\"" + this.wikidataId + 
-	  							"\" cert=\"" + this.confidence + "\">" + 
-	  							this.terms[0] + "</term>";
-							}
-	  					writeFormattedStuff(dataTei, localOptionsTei, function(err) { 
-							if (err) { 
-								console.log(err);
-							} 
-							console.log("TEI standoff fragment written under: " + 
-								localOptionsTei.outPath + "/" + localOptionsTei.output); 
-						});
-		  				
-	  					// create and write the CSV file
-		  				var csvFilePath = file.replace(".pdf", ".csv");
-		  				var localOptionsCsv = new Object();
-		  				localOptionsCsv.outPath = options.outPath;
-		  				localOptionsCsv.output = csvFilePath;
-		  				// complete the options object with information to creating the CSV
-						localOptionsCsv.template = "resources/nerd.template.csv";
-						var dataCsv = new Object();
-		  				dataCsv.entities = [];
-	  					buildEntityDistribution(dataCsv.entities, options.profile, jsonBody);
-	  					// render each entity as csv
-	  					dataCsv.line = function () {
-	  						//wikidata id	confidence	rank	species	prefered term	observed raw terms
-							var theLine = this.wikidataId + "\t" + this.confidence + "\t";
-							if (this.P105)
-								theLine += this.P105 + "\t";
-							if (this.P225)
-								theLine += this.P225 + "\t";
-							if (this.preferedTerm)
-								theLine += this.preferedTerm + "\t";
-							theLine += this.terms.join(", ");
-							return theLine;	
-						}
-	  					writeFormattedStuff(dataCsv, localOptionsCsv, function(err) { 
-							if (err) { 
-								console.log(err);
-							} 
-							console.log("CSV file written under: " + 
-								localOptionsCsv.outPath + "/" + localOptionsCsv.output); 
-						});
-	  				});
-  				});
-			});
-	  	});
-	});
+  	var listOfFiles = getPDFFiles(options.inPath);
+	console.log("found " + listOfFiles.length + " PDF files to be processed");
+	sequentialRequests(options, listOfFiles, 0);
 };
 
 
@@ -189,7 +235,7 @@ function writeFormattedStuff(data, options, cb) {
 	      	// I/O error
 	      	if (err) 
 	      		return cb(err);
-	      	var filename = options.outPath + "/" + options.output;
+	      	var filename = options.outPath+"/"+options.output;
 	      	// Building the composed structured representation from the template and data
 	      	var fragment = mustache.render(tpl, data);
 	      	// writing the structured file
@@ -204,7 +250,7 @@ function writeFormattedStuff(data, options, cb) {
 /**
  * Init the main object with paths passed with the command line
  */
-function init(cb) {
+function init() {
 	var options = new Object();
 	//var inPath; // path to the PDF
 	//var outPath; // path where to write the results
@@ -224,23 +270,22 @@ function init(cb) {
 	// check the input path
 	fs.lstat(options.inPath, (err, stats) => {
 	    if (err)
-	        return cb(err);
+	        console.log(err);
 	    if (stats.isFile()) 
-	    	return cb(new Error("Input path must be a directory, not a file"));
+	    	console.log("Input path must be a directory, not a file");
 	    if (!stats.isDirectory())
-	    	return cb(new Error("Input path is not a valid directory"));
+	    	console.log("Input path is not a valid directory");
 	});
 
 	// check the output path
 	fs.lstat(options.outPath, (err, stats) => {
 	    if (err)
-	        return cb(err);
+	        console.log(err);
 	    if (stats.isFile()) 
-	    	return cb(new Error("Output path must be a directory, not a file"));
+	    	console.log("Output path must be a directory, not a file");
 	    if (!stats.isDirectory())
-	    	return cb(new Error("Output path is not a valid directory"));
+	    	console.log("Output path is not a valid directory");
 	});
-
 	return options;
 }
 
@@ -282,7 +327,7 @@ function buildEntityDistribution(entities, profile, json) {
 				if (statement.propertyId == "P105") {
 					if (statement.valueName) {
 						theEntity.P105 = statement.valueName.replace(" (biology)", "");
-//console.log(theEntity.wikidataId + " - P105: " + theEntity.P105);
+						//console.log(theEntity.wikidataId + " - P105: " + theEntity.P105);
 					}
 				}
 
@@ -292,7 +337,7 @@ function buildEntityDistribution(entities, profile, json) {
 				if (statement.propertyId == "P225") {
 					if (statement.value) {
 						theEntity.P225 = statement.value;
-//console.log(theEntity.wikidataId + " - P225: " + theEntity.P225);
+						//console.log(theEntity.wikidataId + " - P225: " + theEntity.P225);
 					}
 				}
 			}
