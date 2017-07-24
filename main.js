@@ -142,9 +142,16 @@ function sequentialRequests(options, listOfFiles, i) {
 					buildEntityDistribution(dataTei.entities, options.profile, jsonBody);
 					// render each entity as a TEI <term> element 
 					dataTei.line = function () {
-						return "<term key=\"" + this.wikidataId + 
-							"\" cert=\"" + this.confidence + "\">" + 
-							this.terms[0] + "</term>";
+						var line = "<term key=\"" + this.wikidataId + 
+							"\" cert=\"" + this.confidence + "\">";
+						if (this.P225)
+							line += this.P225;
+						else if (this.preferredTerm)
+							line += this.preferredTerm;
+						else
+							line += this.terms[0]; 
+						line += "</term>";
+						return line;	
 					}
 					writeFormattedStuff(dataTei, localOptionsTei, function(err) { 
 						if (err) { 
@@ -171,8 +178,8 @@ function sequentialRequests(options, listOfFiles, i) {
 							theLine += this.P105 + "\t";
 						if (this.P225)
 							theLine += this.P225 + "\t";
-						if (this.preferedTerm)
-							theLine += this.preferedTerm + "\t";
+						if (this.preferredTerm)
+							theLine += this.preferredTerm + "\t";
 						theLine += this.terms.join(", ");
 						return theLine;	
 					};
@@ -313,8 +320,8 @@ function buildEntityDistribution(entities, profile, json) {
 		theEntity.terms = [];
 		theEntity.terms.push(item.rawName);
 
-		if (item.preferedTerm)
-			theEntity.preferedTerm = item.preferedTerm;
+		if (item.preferredTerm)
+			theEntity.preferredTerm = item.preferredTerm;
 
 		var statements = item.statements;
 		if (statements) {
@@ -343,8 +350,8 @@ function buildEntityDistribution(entities, profile, json) {
 			}
 		}
 
-		if (item.preferedTerm)
-			theEntity.preferedTerm = item.preferedTerm;
+		if (item.preferredTerm)
+			theEntity.preferredTerm = item.preferredTerm;
 
 		if (profile == "species") {
 			if (item.P105)
