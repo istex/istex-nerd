@@ -7,7 +7,7 @@
                 <titleStmt>
                     <title>Reconnaissance d'entités scientifiques</title>
                     <respStmt>
-                        <resp>Enrichissement entités scientifiques ISTEX-RD</resp>
+                        <resp>enrichissement entités scientifiques ISTEX-RD</resp>
                         <name resp="istex-rd">ISTEX-RD</name>
                     </respStmt>
                 </titleStmt>
@@ -15,14 +15,16 @@
                     <authority>Inist-CNRS</authority>
                     <availability status="restricted">
                         <licence target="http://creativecommons.org/licenses/by/4.0/">
-                            <p>L’élément standOff de ce document est distribué sous licence Creative Commons 4.0 non transposée (CC BY 4.0).</p>
-                            <p>Ce standOff a été créé dans le cadre du projet ISTEX – Initiative d’Excellence en Information Scientifique et Technique.</p>
+                            <p> L’élément standOff de ce document est distribué sous licence
+                                Creative Commons 4.0 non transposée (CC BY 4.0) </p>
+                            <p> Ce standOff a été créé dans le cadre du projet ISTEX – Initiative
+                                d’Excellence en Information Scientifique et Technique </p>
                         </licence>
                     </availability>
                 </publicationStmt>
                 <sourceDesc>
                     <biblStruct>
-                        <idno type="istex">{{id}}</idno>
+                        <idno type="istex">2B26B6BCCBECCEE1F12841A12B6F55BE7DFAF78A</idno>
                     </biblStruct>
                 </sourceDesc>
             </fileDesc>
@@ -34,7 +36,9 @@
                 </appInfo>
                 <classDecl>
                     <taxonomy xml:id="wikidata">
-                        <gloss>Wikidata is a free and open knowledge base that can be read and edited by both humans and machines <ref target="https://www.wikidata.org"/>
+                        <gloss>Wikidata is a free and open knowledge base that can be read and
+                            edited by both humans and machines <ref
+                                target="https://www.wikidata.org"/>
                         </gloss>
                     </taxonomy>
                     <taxonomy xml:id="wikipedia">
@@ -44,16 +48,23 @@
                 </classDecl>
             </encodingDesc>
             <revisionDesc>
-                <change xml:id="nerd" when="2017-07-24T18:56:38.220Z" who="#istex-rd">version 0.0.2</change>
+                <change xml:id="nerd" when="2017-07-24T18:56:38.220Z" who="#istex-rd"> version
+                    0.0.2</change>
             </revisionDesc>
         </teiHeader>
 
         <listAnnotation xml:lang="en" type="animal" scheme="https://scientific-entity.data.istex.fr">
             <annotationBlock corresp="#text">
                 <keywords scheme="#wikidata">
-                    {{#entities}}
-                    {{{line}}}
-                    {{/entities}}
+                    <term key="Q2857311" cert="0.5525">Salmo trutta</term>
+                    <term key="Q421047" cert="0.5525">Salvelinus alpinus</term>
+                    <term key="Q188879" cert="0.5525">Salmo salar</term>
+                    <term key="Q184238" cert="0.5525">Salmonidae</term>
+                    <term key="Q723654" cert="0.5511">Salvelinus fontinalis</term>
+                    <term key="Q310436" cert="0.5509">Salmo</term>
+                    <term key="Q548682" cert="0.5503">Salvelinus</term>
+                    <term key="Q255669" cert="0.5347">Salmo trutta marmoratus</term>
+                    <term key="Q472832" cert="0.3175">Salmo cettii</term>
                 </keywords>
             </annotationBlock>
         </listAnnotation>

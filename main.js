@@ -138,6 +138,7 @@ function sequentialRequests(options, listOfFiles, i) {
 					localOptionsTei.template = "resources/nerd.template.tei.xml";
 					var dataTei = new Object();
 					dataTei.date = new Date().toISOString();
+					dataTei.id = file.replace(".pdf","");
 					dataTei.entities = [];
 					buildEntityDistribution(dataTei.entities, options.profile, jsonBody);
 					// render each entity as a TEI <term> element 
@@ -180,7 +181,8 @@ function sequentialRequests(options, listOfFiles, i) {
 							theLine += this.P225 + "\t";
 						if (this.preferredTerm)
 							theLine += this.preferredTerm + "\t";
-						theLine += this.terms.join(", ");
+						theLine += this.terms.join(", ") + "\t";
+						theLine += this.count;
 						return theLine;	
 					};
 					writeFormattedStuff(dataCsv, localOptionsCsv, function(err) { 
@@ -361,9 +363,11 @@ function buildEntityDistribution(entities, profile, json) {
 		}
 
 		if (!mapEntities.has(theEntity.wikidataId)) {
+			theEntity.count = 1;
 			mapEntities.set(theEntity.wikidataId, theEntity);
 		} else {
 			var otherEntity = mapEntities.get(theEntity.wikidataId);
+			otherEntity.count += 1;
 			if (otherEntity.confidence < theEntity.confidence)
 				otherEntity.confidence = theEntity.confidence;
 			if (otherEntity.terms.indexOf(item.rawName) <= -1)

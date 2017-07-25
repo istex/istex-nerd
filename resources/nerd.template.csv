@@ -1,4 +1,4 @@
-wikidata id	confidence	rank	species	prefered term	observed raw terms
+wikidata id	confidence	rank	species	prefered term	observed raw terms	count
 {{#entities}}
 {{line}}
 {{/entities}}
