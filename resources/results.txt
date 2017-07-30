@@ -1,0 +1,25 @@
+28.07.2017 (gold corpus correction)
+
+---------- macro-average -----------------
+macro precision	0.7049827253555885
+macro recall   	0.6026106676261475
+macro f1-score 	0.6497893199394073
+
+---------- micro-average -----------------
+micro precision	0.7394366197183099
+micro recall   	0.621301775147929
+micro f1-score 	0.67524115755627
+
+
+
+29.07.2017 (gold corpus correction, update of nerd models)
+
+---------- macro-average -----------------
+macro precision	0.7177159229342706
+macro recall   	0.640861597982341
+macro f1-score 	0.6771149473438979
+
+---------- micro-average -----------------
+micro precision	0.7910447761194029
+micro recall   	0.6272189349112426
+micro f1-score 	0.6996699669966996

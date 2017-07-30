@@ -17,7 +17,9 @@ const green = '\x1b[32m';
 const red = '\x1b[31m';
 const orange = '\x1b[33m';
 const white = '\x1b[37m';
+const blue = `\x1b[34m`;
 const score = '\x1b[7m';
+const bright = "\x1b[1m";
 const reset = '\x1b[0m';
 
 // naked nerd query
@@ -209,8 +211,10 @@ function sequentialRequests(options, listOfFiles, i) {
 /**
  * Process a PDF file by calling the (N)ERD service and enrich with the resulting
  * JSON
- * @param {function} cb Callback called at the end of the process with the following available parameter:
- *  - {Error} err Read/write error
+ * @param {object} options object containing all the information necessary to manage the paths:
+ *  - {object} inPath input directory where to find the PDF files
+ *  - {object} outPath output directory where to write the results
+ *  - {string} profile the profile indicating which filter to use with the (N)ERD service, e.g. "species"
  * @return {undefined} Return undefined
  */
 function processNerd(options) {
@@ -224,10 +228,11 @@ function processNerd(options) {
 /**
  * Write in a file a structured representation with plenty of (N)ERD results, e.g. depending on the 
  * template TEI standoff fragment file or CSV file
- * @param {object} options object containing all the information necessary to manage the paths :
+ * @param {object} options object containing all the information necessary to manage the paths:
  *  - {string} template path to the template
  *  - {object} outPath output directory
  *  - {object} output output file
+ *  - {string} profile the profile indicating which filter to use with the (N)ERD service, e.g. "species"
  * @param {object} data data to be inserted in the template
  * @param {function} cb Callback called at the end of the process with the following available parameter:
  *  - {Error} err Read/write error
@@ -273,7 +278,14 @@ function init() {
 			options.outPath = process.argv[i];
 		} else if (process.argv[i-1] == "-p") {
 			options.profile = process.argv[i];
+		} else if (process.argv[i-1] == "-eval") {
+			options.eval = process.argv[i];
 		}
+	}
+
+	if (!options.inPath) {
+		console.log("Input path is not defines");
+		return;
 	}
 
 	// check the input path
@@ -287,14 +299,16 @@ function init() {
 	});
 
 	// check the output path
-	fs.lstat(options.outPath, (err, stats) => {
-	    if (err)
-	        console.log(err);
-	    if (stats.isFile()) 
-	    	console.log("Output path must be a directory, not a file");
-	    if (!stats.isDirectory())
-	    	console.log("Output path is not a valid directory");
-	});
+	if (options.outPath) {
+		fs.lstat(options.outPath, (err, stats) => {
+		    if (err)
+		        console.log(err);
+		    if (stats.isFile()) 
+		    	console.log("Output path must be a directory, not a file");
+		    if (!stats.isDirectory())
+		    	console.log("Output path is not a valid directory");
+		});
+	}
 	return options;
 }
 
@@ -384,9 +398,169 @@ function buildEntityDistribution(entities, profile, json) {
 	});
 }
 
+/**
+ * Run an evaluation by calling the (N)ERD service based on a gold dataset file
+ * JSON
+ * @param {object} options object containing all the information necessary to manage the paths:
+ *  - {string} gold dataset file path
+ *  - {object} inPath input directory where to find the produced CSV files necessary to run the evaluation
+ *  - {string} profile the profile indicating which filter to use with the (N)ERD service, e.g. "species"
+ * @return {undefined} Return undefined
+ */
+function evalNerd(options) {
+  	// get the expected "gold" results
+  	var file = options.eval;
+  	var content = fs.readFileSync(file, 'utf8');
+
+  	var lines = content.split(/\r?\n/);
+  	var gold = [];
+  	var dataFile;
+  	var entities;
+  	for(var i=1; i<lines.length; i++) {
+  		
+  		//console.log(lines[i]);
+  		var cells = lines[i].split(/\t/);
+  		//console.log(cells.length);
+  		if (cells.length == 2) {
+  			if (cells[0].trim().length != 0) {
+  				// we have a new file
+  				if (dataFile) {
+  					var entry = new Object();
+  					entry.file = dataFile;
+  					entry.entities = entities;
+  					gold.push(entry);
+  					//console.log(file);
+  					//console.log(entities);
+  				}
+
+  				dataFile = cells[0];
+  				entities = [];
+  			} 
+  			if (cells[1].trim().length != 0) {
+  				entities.push(cells[1].trim().toLowerCase());
+  			}
+  		}	
+  	}
+
+  	var sum_precision = 0.0;
+  	var sum_recall = 0.0;
+  	var sum_true_positive = 0;
+  	var sum_false_positive = 0;
+  	var sum_observed = 0;
+  	var sum_expected = 0;
+  	// get the observed results and produce metrics
+  	for(var i=0; i<gold.length; i++) {
+  		var theFile = options.inPath + "/" + gold[i].file + ".csv";
+  		// read the species names
+  		var theContent = fs.readFileSync(theFile, 'utf8');
+  		var theEntities = [];
+  		var theLines = theContent.split(/\r?\n/);
+  		for(var j=1; j<theLines.length; j++) {
+  			var cells = theLines[j].split(/\t/);
+  			if ( (cells.length == 7) && (cells[2].trim() == "Species") ) {
+  				// we concatenate the "scientific" species name together with the raw actual name 
+  				// found in the text, so that we can use the second one as a fallback due to the
+  				// policies of the gold dataset we use (if synonyms, use the actual raw name instead 
+  				// of the standard scientific name)
+	  			if (cells[3].trim().length != 0) {
+	  				theEntities.push(cells[3].trim().toLowerCase() + "/" + cells[5].trim().toLowerCase());
+	  			}
+	  		}
+  		}
+  		var stats = computeMetrics(theEntities, gold[i].entities);
+  		console.log("\n");
+  		console.log(orange+'%s\x1b[0m', "file: " + gold[i].file);
+  		var entityList = "";
+  		for(var j=0; j<theEntities.length; j++) {
+  			var pieces = theEntities[j].split("/");
+  			if (pieces.length == 0)
+  				continue;
+  			if (j != 0)
+  				entityList += ", ";
+			entityList += pieces[0];
+		}
+		console.log("candidates: " + entityList);
+		//console.log("candidates: " + theEntities);
+
+  		console.log("gold: " + gold[i].entities);
+  		console.log(stats);
+
+  		var precision = 0.0;
+  		if (stats.observed != 0)
+	  		precision = stats.true_positive / parseFloat(stats.observed);
+  		var recall = 0.0;
+		if (stats.expected != 0)
+  			recall = stats.true_positive / parseFloat(stats.expected);
+  		var f1 = 0.0;
+  		if ( (recall != 0.0) && (precision != 0.0) )
+  			f1 = 2*precision*recall / (precision+recall);
+
+  		console.log(white+'%s\x1b[0m', "precision \t" + precision);
+  		console.log(white+'%s\x1b[0m', "recall    \t" + recall);
+  		console.log(white+'%s\x1b[0m', "f1-score  \t" + f1);
+
+  		sum_precision += precision;
+  		sum_recall += recall;
+  		sum_true_positive += stats.true_positive;
+  		sum_false_positive += stats.false_positive;
+  		sum_observed += stats.observed;
+  		sum_expected += stats.expected;
+  	}
+
+  	var macro_precision = sum_precision / gold.length;
+  	var macro_recall = sum_recall / gold.length;
+  	var macro_f1 = 0.0;
+  	if ( (macro_recall != 0.0) && (macro_precision != 0.0) )
+  		macro_f1 = 2*macro_precision*macro_recall / (macro_precision+macro_recall);
+
+  	console.log(red+'%s\x1b[0m',"\n---------- macro-average -----------------");
+  	console.log(bright+'%s\x1b[0m',"macro precision\t" + macro_precision);
+  	console.log(bright+'%s\x1b[0m',"macro recall   \t" + macro_recall);
+  	console.log(bright+'%s\x1b[0m',"macro f1-score \t" + macro_f1);
+
+  	var micro_precision = sum_true_positive / parseFloat(sum_observed);
+  	var micro_recall = sum_true_positive / parseFloat(sum_expected);
+  	var micro_f1 = 0.0;
+  	if ( (micro_recall != 0.0) && (micro_precision != 0.0) )
+  		micro_f1 = 2*micro_precision*micro_recall / (micro_precision+micro_recall);
+
+  	console.log(red+'%s\x1b[0m',"\n---------- micro-average -----------------");
+  	console.log(bright+'%s\x1b[0m',"micro precision\t" + micro_precision);
+  	console.log(bright+'%s\x1b[0m',"micro recall   \t" + micro_recall);
+  	console.log(bright+'%s\x1b[0m',"micro f1-score \t" + micro_f1);
+};
+
+function computeMetrics(observed, gold) {
+	var stats = new Object();
+	stats.observed = observed.length;
+	stats.expected = gold.length;
+	var true_positive = 0;
+	var false_positive = 0;
+	if(observed.length > 0) {
+		for(var i=0; i<observed.length; i++) {
+			var pieces = observed[i].split("/");
+			if (pieces.length != 2)
+				continue;
+			var scientificName = pieces[0];
+			var actualName = pieces[1];
+			if ( (gold.indexOf(scientificName) > -1) || (gold.indexOf(actualName) > -1) )
+				true_positive += 1;
+			else 
+				false_positive += 1;
+		}	
+	}
+	stats.true_positive = true_positive;
+	stats.false_positive = false_positive;
+	return stats;
+}
+
+
 function main() {
 	var options = init();
-	processNerd(options);
+	if (options.eval)
+		evalNerd(options);
+	else
+		processNerd(options);
 }
 
 main();

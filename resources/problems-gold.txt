@@ -1,0 +1,70 @@
+*pas clair* : mélange de nom d'espèce animal et végétal?
+dans 33DB4B356F52C9356157567586A2245E6F868827 il y a un mélange des deux dans le gold
+mais dans 7D98966B56ED46DF131311E3BFCBE32D76EF0675 par exemple il n'y a pas "secale cereale" (qui apparaît en page 5)
+même problème pour 446AEE7FB3C4DA2B09129A0431F24C188F879F4F uniquement animal
+il faut une règle claire...
+
+*pas clair*: il y a parfois des synonymes au niveau des noms scientifiques, Wikidata tend à renvoyer le nom scientifique le plus courant, mais le Gold tend à utiliser la version qui apparaît dans le texte même si désuette
+
+- document 4F9ED2602B743EBA2116E54DA54F5B28DE747951
+ce document parle surtout des "setophaga adelaidae" mais cette espèce n'apparaît pas dans le gold
+
+- document 6A174B72611EEBBDCF634ACB8780A8CC1B868EA8
+l'espèce "ophiocoma wendtii" apparaît page 1141 (au milieu du tableau)
+
+- document FAEC1FEC9632369638C83131370EA2CADA438275
+"red rock crab" (Cancer productus) est mentionné 8 fois mais n'apparaît pas dans le gold
+"blue crab" (callinectes sapidus) est memtionné 21 fois mais n'apparaît pas dans le gold
+
+- document 8BCAECCC3AC0398BD88AA1589C8086EAE029D682
+black-headed ibis (threskiornis melanocephalus) mentionné plusieurs fois mais n'apparaît pas dans le gold
+straw-necked ibis (threskiornis spinicollis) mentionné plus de 20 fois mais n'apparaît pas dans le gold
+Sandhill crane (grus canadensis) mentionné deux fois mais n'apparaît pas dans le gold
+American kestrel (falco sparverius) mentionné une fois mais n'apparaît pas dans le gold
+
+- document 11C864A4909DA86BA83E28ABD00C349D2D7A8A23
+le gold liste en majorité des sous-espèces et non des espèces : "gallotia atlantica atlantica", "gallotia caesaris caesaris", "gallotia galloti galloti"
+on devrait avoir "gallotia atlantica", "gallotia caesaris", "gallotia galloti"
+
+- document 020C2FBB3A8426B56756229614573FAB07D5F5AC
+"trachurus trachurus" mentionné 1 fois mais n'apparaît pas dans le gold
+"sarpa salpa" mentionné 1 fois mais n'apparaît pas dans le gold
+"boops boops" mentionné 3 fois mais n'apparaît pas dans le gold
+"chromis chromis" mentionné 2 fois mais n'apparaît pas dans le gold
+"Sarda chilliensis" (aka "Pacific bonito" ou "Sarda lineolata") mentionné 1 fois mais n'apparaît pas dans le gold
+
+- document 33B1ACBC65792C01FDFEA7F39C33CE61D57D2FCB
+note: "amalosia lesueurii" (via wikidata) est un synonyme de "oedura lesueurii" (plus courant) d'où 1 erreur qui n'en est pas vraiment une
+
+- document 33DB4B356F52C9356157567586A2245E6F868827
+dans le gold : "monochamus obtusus casey" -> le nom d'espèce est normalement "monochamus obtusus"
+	comme le gold ici inclut aussi les noms d'espèces végétales :
+	"black pine" (pinus nigra) mentionné 1 fois mais n'apparaît pas dans le gold
+
+- document 64F97DC95C5BC980946C9712CEC6A91F78C7337D
+"fruit fly" (drosophila melanogaster) mentionné deux fois mais n'apparaît pas dans le gold
+dans le gold "Aquarius paludum insularis" est une sous-espèce -> le nom d'espèce est normalement "Aquarius paludum"
+
+- document 84B5EC3C5B084F700466717F2D05079B3373A8B7
+faute d'orthographe a priori dans le gold "suricata suricatta" et non "suricata suricata"
+"homo sapiens" mentionné 1 fois mais n'apparaît pas dans le gold
+"lemur catta" mentionné 1 fois mais n'apparaît pas dans le gold
+dans le gold "canis lupus familiaris" est une sous-espèce -> le nom d'espèce est normalement "Canis Lupus"
+
+note: "Procolobus badius" est un synonyme pour "Piliocolobus badius" renvoyé via Wikidata d'où 1 erreur qui n'en est pas vraiment une (en principe "Piliocolobus badius" est le nom scientifique plus courant)
+
+- document 836FCF0CFCC564ABCC18FC7F3BEAF96799E56B0F
+"salmo trutta" mentionné deux fois mais n'apparaît pas dans le gold
+
+note: "stizostedion vitreum" est un synonyme pour "Sander vitreus" (Walleye) renvoyé via Wikidata, d'où 1 erreur qui n'en est pas vraiment une (en principe "Sander vitreus" est le nom scientifique plus courant)
+
+- document B973F3078544AABE7B3610581FB6BCE6826B3D69
+article autour de souris, "mouse" mentionné tout du long mais "mus musculus" n'apparaît pas dans le gold
+
+
+
+
+
+
+
+

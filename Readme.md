@@ -10,9 +10,9 @@ This node.js module can be used to process a set of PDF in a given directory by 
 
 ## Build and run
 
-You need first to install and start the (N)ERD service, see the [documentation](http://nerd.readthedocs.io). 
+You need first to install and start the (N)ERD service, see the [documentation](http://nerd.readthedocs.io). It is assumed that the server will run on the address `http://localhost:8090`. You can change the server address by editing the file `main.js`.
 
-When this is done, install the present module:
+When the server is up and running, install the present module:
 
 > npm install
 
@@ -24,7 +24,9 @@ Example:
 
 > node main -in ~/tmp/in/ -out ~/tmp/out/
 
-Only the files with extension `.pdf` present in the input directory will be processed, the other files will be ignored. 
+Only the files with extension `.pdf` present in the input directory (`-in`) will be processed, the other files will be ignored. Results will be written in the output directory (`-out`), reusing the file name with different file extensions (see above).
+
+Note that with _node.js_ to exploit parallelism/multithreading of the (N)ERD server, you need to start several _node.js_ in parallel (_fork_) and partition the set of PDf files to be processed. 
 
 ## Using profile
 
@@ -35,6 +37,14 @@ For using customised queries to (N)ERD, use the parameter `-p` followed by the p
 Currently the available query profiles are:
 
 * _species_: filter entities so that only living entities are returned 
+
+## Evaluation
+
+After running the client on a set of PDF files, you can run an evaluation by specifying an evaluation file (gold data) as given in example in `resources/test_gold.csv`:
+
+> node main -eval resources/test_gold.csv -in ~/tmp/in/ -p species
+
+The path given by the parameter `-in` must contain the CVS files resulting from the process of the PDF documents mentionned in the evaluation file. Some standard evaluation metrics will be printed on the output console. 
 
 ## Requirements
 
