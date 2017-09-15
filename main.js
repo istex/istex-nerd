@@ -11,6 +11,8 @@ var mkdirp = require('mkdirp'),
 
 // the URL of the (N)ERD service (to be changed if necessary)
 const NERD_URL = "http://localhost:8090/service";
+//const NERD_URL = "http://cloud.science-miner.com/nerd/service";
+//const NERD_URL = "http://nerd.huma-num.fr/nerd/service";
 
 // for making console output less boring
 const green = '\x1b[32m';
@@ -49,7 +51,8 @@ const NERD_QUERY_SPECIES = {
     "nbest": false,
     "customisation": "generic",
     "full": true,
-    "filter": { "property": { "id": "P225"} }
+    "filter": { "property": { "id": "P225"} },
+    "minSelectorScore" : 0.3
 };
 
 /**
@@ -99,6 +102,9 @@ function sequentialRequests(options, listOfFiles, i) {
 
 		if (res.statusCode != 200) {
 			console.log("Call the (N)ERd service failed with error " + res.statusCode);
+			// move to next file to be processed
+			i++;
+			sequentialRequests(options, listOfFiles, i);
 			return false;
 		}
 

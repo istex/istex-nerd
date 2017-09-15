@@ -23,3 +23,20 @@ macro f1-score 	0.6771149473438979
 micro precision	0.7910447761194029
 micro recall   	0.6272189349112426
 micro f1-score 	0.6996699669966996
+
+
+
+30.07.2017
+selection score at 0.35
+
+---------- macro-average -----------------
+macro precision	0.757451226104477
+macro recall   	0.6695165687425749
+macro f1-score 	0.7107744795959905
+
+---------- micro-average -----------------
+micro precision	0.7622377622377622
+micro recall   	0.6449704142011834
+micro f1-score 	0.6987179487179488
+
+
