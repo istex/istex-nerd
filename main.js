@@ -10,8 +10,8 @@ var mkdirp = require('mkdirp'),
   fs = require('fs');
 
 // the URL of the (N)ERD service (to be changed if necessary)
-const NERD_URL = "http://localhost:8090/service";
-//const NERD_URL = "http://cloud.science-miner.com/nerd/service";
+//const NERD_URL = "http://localhost:8090/service";
+const NERD_URL = "http://cloud.science-miner.com/nerd/service";
 //const NERD_URL = "http://nerd.huma-num.fr/nerd/service";
 
 // for making console output less boring
@@ -59,12 +59,16 @@ const NERD_QUERY_SPECIES = {
  * List all the PDF files in a directory in a synchronous fashion,
  * @return the list of file names
  */
-function getPDFFiles (dir) {
+function getFiles (dir) {
     var fileList = [];
     var files = fs.readdirSync(dir);
     for (var i=0; i<files.length; i++) {
     	if (fs.statSync(path.join(dir, files[i])).isFile()) {
-    		if (files[i].endsWith(".pdf") | files[i].endsWith(".PDF"))
+    		if (files[i].endsWith(".pdf") || files[i].endsWith(".PDF") ||
+    			files[i].endsWith(".txt") || files[i].endsWith(".TXT") ||
+    			files[i].endsWith(".xml") || files[i].endsWith(".XML") ||
+    			files[i].endsWith(".tei") || files[i].endsWith(".TEI")
+    			)
             	fileList.push(files[i]);
         }
     }
@@ -81,12 +85,25 @@ function sequentialRequests(options, listOfFiles, i) {
 	var file = listOfFiles[i];	
   	console.log("---\nProcessing: " + options.inPath+"/"+file);
 
-	var form = new FormData();
-	if (options.profile && (options.profile == "species"))
-		form.append("query", JSON.stringify(NERD_QUERY_SPECIES));
+  	var requestQuery = null;
+  	if (options.profile && (options.profile == "species"))
+		requestQuery = NERD_QUERY_SPECIES;
 	else
-		form.append("query", JSON.stringify(NERD_QUERY));
-	form.append("file", fs.createReadStream(options.inPath+"/"+file));
+		requestQuery = NERD_QUERY;
+
+	var form = new FormData();
+	if (file.endsWith(".pdf") || file.endsWith(".PDF"))
+		form.append("file", fs.createReadStream(options.inPath+"/"+file));
+	else if (file.endsWith(".txt") || file.endsWith(".TXT")) {
+		var textContent = fs.readFileSync(options.inPath+"/"+file, "utf8");
+		requestQuery.text = JSON.stringify(textContent);
+	} else {
+		console.log("---\nxml/tei processing not yet implemented");
+		// move to next file to be processed
+		i++;
+		sequentialRequests(options, listOfFiles, i);
+	}
+	form.append("query", JSON.stringify(requestQuery));
 	form.submit(NERD_URL+"/disambiguate", function(err, res, body) {
 		if (err) {
 			console.log(err);
@@ -225,7 +242,7 @@ function sequentialRequests(options, listOfFiles, i) {
  */
 function processNerd(options) {
   	// get the PDF paths
-  	var listOfFiles = getPDFFiles(options.inPath);
+  	var listOfFiles = getFiles(options.inPath);
 	console.log("found " + listOfFiles.length + " PDF files to be processed");
 	sequentialRequests(options, listOfFiles, 0);
 };
