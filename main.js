@@ -10,8 +10,8 @@ var mkdirp = require('mkdirp'),
   fs = require('fs');
 
 // the URL of the (N)ERD service (to be changed if necessary)
-//const NERD_URL = "http://localhost:8090/service";
-const NERD_URL = "http://cloud.science-miner.com/nerd/service";
+const NERD_URL = "http://localhost:8090/service";
+//const NERD_URL = "http://cloud.science-miner.com/nerd/service";
 //const NERD_URL = "http://nerd.huma-num.fr/nerd/service";
 
 // for making console output less boring
