@@ -29,11 +29,11 @@ const NERD_QUERY = {
     "language": {
         "lang": "en"
     },
-    "onlyNER": false,
-    "resultLanguages": [
-        "de",
-        "fr"
-    ],
+//    "onlyNER": false,
+//    "resultLanguages": [
+//        "de",
+//        "fr"
+//    ],
     "nbest": false,
     "customisation": "generic"
 };
@@ -43,16 +43,16 @@ const NERD_QUERY_SPECIES = {
     "language": {
         "lang": "en"
     },
-    "onlyNER": false,
-    "resultLanguages": [
-        "de",
-        "fr"
-    ],
+//    "onlyNER": false,
+    "mentions": ["species"],
+//    "resultLanguages": [
+//        "de",
+//        "fr"
+//    ],
     "nbest": false,
-    "customisation": "generic",
+//    "customisation": "generic",
     "full": true,
-    "filter": { "property": { "id": "P225"} },
-    "minSelectorScore" : 0.3
+    "minSelectorScore" : 1.0
 };
 
 /**
@@ -349,6 +349,8 @@ function init() {
 function buildEntityDistribution(entities, profile, json) {
 	var nerdEntitites = json.entities;
 	var mapEntities = new Map();
+	if (nerdEntitites.length == 0)
+		return;
 	for(var i=0; i<nerdEntitites.length; i++) {
 		var item = nerdEntitites[i];
 		if (!item.wikidataId)
