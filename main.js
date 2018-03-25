@@ -52,7 +52,7 @@ const NERD_QUERY_SPECIES = {
     "nbest": false,
 //    "customisation": "generic",
     "full": true,
-    "minSelectorScore" : 1.0
+    "minSelectorScore" : 0.2
 };
 
 /**
