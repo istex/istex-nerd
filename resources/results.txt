@@ -40,3 +40,41 @@ micro recall   	0.6449704142011834
 micro f1-score 	0.6987179487179488
 
 
+
+09.11.2017
+selection score at 0.3
+
+---------- macro-average -----------------
+macro precision	0.7142669172932331
+macro recall   	0.7166043193132975
+macro f1-score 	0.7154337091698424
+
+---------- micro-average -----------------
+micro precision	0.7245508982035929
+micro recall   	0.7159763313609467
+micro f1-score 	0.7202380952380952
+
+
+with species
+
+---------- macro-average -----------------
+macro precision	0.7005451978362194
+macro recall   	0.7253762491378589
+macro f1-score 	0.712744519042519
+
+---------- micro-average -----------------
+micro precision	0.7093023255813954
+micro recall   	0.7218934911242604
+micro f1-score 	0.7155425219941348
+
+without 
+
+---------- macro-average -----------------
+macro precision	0.7361046847888952
+macro recall   	0.7060780035238239
+macro f1-score 	0.7207787618479251
+
+---------- micro-average -----------------
+micro precision	0.7547169811320755
+micro recall   	0.7100591715976331
+micro f1-score 	0.7317073170731707
