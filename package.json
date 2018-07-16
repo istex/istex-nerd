@@ -1,7 +1,7 @@
 {
   "name": "istex-nerd",
   "version": "0.1.0",
-  "description": "Interface for the (N)ERD service to ISTEX resources and results encoded in standoff TEI",
+  "description": "Interface for the entity-fishing service to ISTEX resources and results encoded in standoff TEI",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
