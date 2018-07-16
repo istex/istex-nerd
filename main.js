@@ -9,9 +9,9 @@ var mkdirp = require('mkdirp'),
   path = require('path'),
   fs = require('fs');
 
-// the URL of the (N)ERD service (to be changed if necessary)
+// the URL of the entity-fishing service (to be changed if necessary)
 const NERD_URL = "http://localhost:8090/service";
-//const NERD_URL = "http://cloud.science-miner.com/nerd/service";
+//const NERD_URL = "http://cloud.science-miner.com/entity-fishing/service";
 //const NERD_URL = "http://nerd.huma-num.fr/nerd/service";
 
 // for making console output less boring
@@ -24,7 +24,7 @@ const score = '\x1b[7m';
 const bright = "\x1b[1m";
 const reset = '\x1b[0m';
 
-// naked nerd query
+// naked entity-fishing query
 const NERD_QUERY = {
     "language": {
         "lang": "en"
@@ -38,7 +38,7 @@ const NERD_QUERY = {
     "customisation": "generic"
 };
 
-// nerd query with filter for species
+// entity-fishing query with filter for species
 const NERD_QUERY_SPECIES = {
     "language": {
         "lang": "en"
@@ -111,14 +111,14 @@ function sequentialRequests(options, listOfFiles, i) {
 		}
 
 		if (!res) {
-			console.log("(N)ERd service appears unavailable");
+			console.log("entity-fishing service appears unavailable");
 			return false;
 		}
 
 		res.setEncoding('utf8');
 
 		if (res.statusCode != 200) {
-			console.log("Call the (N)ERd service failed with error " + res.statusCode);
+			console.log("Call to entity-fishing service failed with error " + res.statusCode);
 			// move to next file to be processed
 			i++;
 			sequentialRequests(options, listOfFiles, i);
@@ -232,12 +232,12 @@ function sequentialRequests(options, listOfFiles, i) {
 }
 
 /**
- * Process a PDF file by calling the (N)ERD service and enrich with the resulting
+ * Process a PDF file by calling the entity-fishing service and enrich with the resulting
  * JSON
  * @param {object} options object containing all the information necessary to manage the paths:
  *  - {object} inPath input directory where to find the PDF files
  *  - {object} outPath output directory where to write the results
- *  - {string} profile the profile indicating which filter to use with the (N)ERD service, e.g. "species"
+ *  - {string} profile the profile indicating which filter to use with the entity-fishing service, e.g. "species"
  * @return {undefined} Return undefined
  */
 function processNerd(options) {
@@ -249,13 +249,13 @@ function processNerd(options) {
 
 
 /**
- * Write in a file a structured representation with plenty of (N)ERD results, e.g. depending on the 
+ * Write in a file a structured representation with plenty of entity-fishing results, e.g. depending on the 
  * template TEI standoff fragment file or CSV file
  * @param {object} options object containing all the information necessary to manage the paths:
  *  - {string} template path to the template
  *  - {object} outPath output directory
  *  - {object} output output file
- *  - {string} profile the profile indicating which filter to use with the (N)ERD service, e.g. "species"
+ *  - {string} profile the profile indicating which filter to use with the entity-fishing service, e.g. "species"
  * @param {object} data data to be inserted in the template
  * @param {function} cb Callback called at the end of the process with the following available parameter:
  *  - {Error} err Read/write error
@@ -291,7 +291,7 @@ function init() {
 	var options = new Object();
 	//var inPath; // path to the PDF
 	//var outPath; // path where to write the results
-	//var nbThread = 1; // number of threads to use when calling (N)ERD
+	//var nbThread = 1; // number of threads to use when calling entity-fishing
 	var attribute; // name of the passed parameter
 	// get the path to the PDF to be processed
 	for (var i = 1, len = process.argv.length; i < len; i++) {
@@ -336,13 +336,13 @@ function init() {
 }
 
 /**
- * Given the json response body of the (N)ERD disambiguation query, create an
+ * Given the json response body of the entity-fishing disambiguation query, create an
  * array of entities for presentation purpose, where only one instance of an
  * entity is kept with its maximum confidence and the different raw term
  * used in the processed text to refer to the same entity
  * @param {object} entities the array of entities to be filled
  * @param {object} profile name of the profile to consider or null
- * @param {object} json the response body of the (N)ERD disambiguation query
+ * @param {object} json the response body of the entity-fishing disambiguation query
  *
  * @return {undefined} Return undefined
  */
@@ -424,12 +424,12 @@ function buildEntityDistribution(entities, profile, json) {
 }
 
 /**
- * Run an evaluation by calling the (N)ERD service based on a gold dataset file
+ * Run an evaluation by calling the entity-fishing service based on a gold dataset file
  * JSON
  * @param {object} options object containing all the information necessary to manage the paths:
  *  - {string} gold dataset file path
  *  - {object} inPath input directory where to find the produced CSV files necessary to run the evaluation
- *  - {string} profile the profile indicating which filter to use with the (N)ERD service, e.g. "species"
+ *  - {string} profile the profile indicating which filter to use with the entity-fishing service, e.g. "species"
  * @return {undefined} Return undefined
  */
 function evalNerd(options) {
