@@ -137,7 +137,11 @@ function sequentialRequests(options, listOfFiles, i) {
 			      	return cb(err);
 
 			    // first write JSON reponse 
-				var jsonFilePath = options.outPath+"/"+file.replace(".pdf", ".json");
+			    var jsonFilePath;
+			    if (file.endsWith(".txt"))
+			    	jsonFilePath = options.outPath+"/"+file.replace(".txt", ".json");
+			    else
+					jsonFilePath = options.outPath+"/"+file.replace(".pdf", ".json");
 				fs.writeFile(jsonFilePath, body, 'utf8', 
 					function(err) { 
 						if (err) { 
@@ -155,7 +159,11 @@ function sequentialRequests(options, listOfFiles, i) {
 
 				if (jsonBody) {
 			        // create and write the TEI fragment
-	  				var teiFilePath = file.replace(".pdf", ".tei");
+	  				var teiFilePath;
+	  				if (file.endsWith(".txt"))
+				    	teiFilePath = file.replace(".txt", ".tei");
+				    else
+						teiFilePath = file.replace(".pdf", ".tei");
 	  				var localOptionsTei = new Object();
 	  				localOptionsTei.outPath = options.outPath;
 	  				localOptionsTei.output = teiFilePath;
@@ -169,7 +177,7 @@ function sequentialRequests(options, listOfFiles, i) {
 					// render each entity as a TEI <term> element 
 					dataTei.line = function () {
 						var line = "<term key=\"" + this.wikidataId + 
-							"\" cert=\"" + this.confidence + "\">";
+							"\" cert=\"" + this.confidence_score + "\">";
 						if (this.P225)
 							line += this.P225;
 						else if (this.preferredTerm)
@@ -187,7 +195,11 @@ function sequentialRequests(options, listOfFiles, i) {
 					});
 					
 					// create and write the CSV file
-	  				var csvFilePath = file.replace(".pdf", ".csv");
+	  				var csvFilePath;
+	  				if (file.endsWith(".txt"))
+				    	csvFilePath = file.replace(".txt", ".csv");
+				    else
+						csvFilePath = file.replace(".pdf", ".csv");
 	  				var localOptionsCsv = new Object();
 	  				localOptionsCsv.outPath = options.outPath;
 	  				localOptionsCsv.output = csvFilePath;
@@ -199,7 +211,7 @@ function sequentialRequests(options, listOfFiles, i) {
 					// render each entity as csv
 					dataCsv.line = function () {
 							//wikidata id	confidence	rank	species	prefered term	observed raw terms
-						var theLine = this.wikidataId + "\t" + this.confidence + "\t";
+						var theLine = this.wikidataId + "\t" + this.confidence_score + "\t";
 						if (this.P105)
 							theLine += this.P105 + "\t";
 						if (this.P225)
@@ -243,7 +255,7 @@ function sequentialRequests(options, listOfFiles, i) {
 function processNerd(options) {
   	// get the PDF paths
   	var listOfFiles = getFiles(options.inPath);
-	console.log("found " + listOfFiles.length + " PDF files to be processed");
+	console.log("found " + listOfFiles.length + " files to be processed");
 	sequentialRequests(options, listOfFiles, 0);
 };
 
@@ -357,7 +369,7 @@ function buildEntityDistribution(entities, profile, json) {
 			continue;
 		var theEntity = {};
 		theEntity.wikidataId = item.wikidataId;
-		theEntity.confidence = item.nerd_score;
+		theEntity.confidence_score = item.confidence_score;
 		theEntity.terms = [];
 		theEntity.terms.push(item.rawName);
 
@@ -407,8 +419,8 @@ function buildEntityDistribution(entities, profile, json) {
 		} else {
 			var otherEntity = mapEntities.get(theEntity.wikidataId);
 			otherEntity.count += 1;
-			if (otherEntity.confidence < theEntity.confidence)
-				otherEntity.confidence = theEntity.confidence;
+			if (otherEntity.confidence_score < theEntity.confidence_score)
+				otherEntity.confidence_score = theEntity.confidence_score;
 			if (otherEntity.terms.indexOf(item.rawName) <= -1)
 				otherEntity.terms.push(item.rawName);
 		}
@@ -419,7 +431,7 @@ function buildEntityDistribution(entities, profile, json) {
 	}
 
 	entities.sort(function(a, b) {
-    	return parseFloat(b.confidence) - parseFloat(a.confidence);
+    	return parseFloat(b.confidence_score) - parseFloat(a.confidence_score);
 	});
 }
 
