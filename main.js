@@ -34,6 +34,7 @@ const NERD_QUERY = {
 //        "de",
 //        "fr"
 //    ],
+//    "mentions": ["ner", "wikipedia"],
     "nbest": false,
     "customisation": "generic"
 };
@@ -361,7 +362,7 @@ function init() {
 function buildEntityDistribution(entities, profile, json) {
 	var nerdEntitites = json.entities;
 	var mapEntities = new Map();
-	if (nerdEntitites.length == 0)
+	if (!nerdEntitites || nerdEntitites.length == 0)
 		return;
 	for(var i=0; i<nerdEntitites.length; i++) {
 		var item = nerdEntitites[i];
