@@ -11,7 +11,7 @@ var mkdirp = require('mkdirp'),
 
 // the URL of the entity-fishing service (to be changed if necessary)
 const NERD_URL = "http://localhost:8090/service";
-//const NERD_URL = "http://cloud.science-miner.com/entity-fishing/service";
+//const NERD_URL = "https://cloud.science-miner.com/nerd/service";
 //const NERD_URL = "http://nerd.huma-num.fr/nerd/service";
 
 // for making console output less boring
@@ -34,9 +34,10 @@ const NERD_QUERY = {
 //        "de",
 //        "fr"
 //    ],
-//    "mentions": ["ner", "wikipedia"],
-    "nbest": false,
-    "customisation": "generic"
+    "mentions": ["ner", "wikipedia"],
+    "nbest": false
+//    "minSelectorScore" : 0.35
+//    "customisation": "generic"
 };
 
 // entity-fishing query with filter for species
@@ -105,6 +106,7 @@ function sequentialRequests(options, listOfFiles, i) {
 		sequentialRequests(options, listOfFiles, i);
 	}
 	form.append("query", JSON.stringify(requestQuery));
+console.log(NERD_URL+"/disambiguate");
 	form.submit(NERD_URL+"/disambiguate", function(err, res, body) {
 		if (err) {
 			console.log(err);
