@@ -1,7 +1,0 @@
-time node main -in ~/tmp/in/ -out ~/tmp/out/
-time node main -in ~/tmp/in/ -out ~/tmp/out/
-time node main -in ~/tmp/in/ -out ~/tmp/out/
-time node main -in ~/tmp/in/ -out ~/tmp/out/
-time node main -in ~/tmp/in/ -out ~/tmp/out/
-time node main -in ~/tmp/in/ -out ~/tmp/out/
-
